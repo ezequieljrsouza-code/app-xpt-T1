@@ -36,7 +36,7 @@ def get_db():
         key_dict = json.loads(key_dict)
         
     creds = service_account.Credentials.from_service_account_info(key_dict)
-    return firestore.Client(credentials=creds, project=key_dict['project_id'])
+    return firestore.Client(credentials=creds, project=key_dict['expedicao-xpt-t1-spa1'])
 
 db = get_db()
 

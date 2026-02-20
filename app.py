@@ -123,8 +123,10 @@ with col_sync:
         dados_novos = carregar_do_sheets()
         if dados_novos:
             st.session_state.dados_controle = organizar_dados(dados_novos)
-            st.session_state['sync_ok'] = True
+            st.toast("Dados atualizados com sucesso! ☁️✅", icon="🔄") # Notificação aqui
             st.rerun()
+        else:
+            st.toast("Nenhum dado encontrado na nuvem.", icon="⚠️")
 
 with col_clear:
     if st.button("🗑️ Limpar Tudo", use_container_width=True, type="secondary"):
@@ -132,16 +134,18 @@ with col_clear:
             st.session_state.dados_controle[rota]["veiculos"] = []
             st.session_state.dados_controle[rota]["letra"] = "?"
         salvar_no_sheets()
+        st.toast("Todas as rotas e placas foram limpas! 🗑️", icon="✅") # Notificação aqui
         st.rerun()
 
 with col_add:
     with st.popover("➕ Nova Rota", use_container_width=True):
-        nova_id = st.text_input("ID da Rota").upper()
+        nova_id = st.text_input("ID da Rota (ex: EPA9)").upper()
         nova_cid = st.text_input("Cidade").upper()
         if st.button("Confirmar Adição"):
             if nova_id and nova_cid:
                 st.session_state.dados_controle[nova_id] = {"local": nova_cid, "janela": "00:00 às 00:00", "letra": "?", "veiculos": []}
                 salvar_no_sheets()
+                st.toast(f"Rota {nova_id} adicionada!", icon="📍")
                 st.rerun()
 
 # --- 9. CABEÇALHO ---

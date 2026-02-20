@@ -28,14 +28,13 @@ data_hoje = datetime.now(fuso_br).strftime('%d/%m/%Y')
 # --- 3. CONEXÃO COM FIREBASE ---
 @st.cache_resource
 def get_db():
-    # O Streamlit já converte o segredo em dicionário se estiver formatado corretamente
-    key_dict = st.secrets["firestore_key"] 
+    # Aqui o Streamlit já entrega como um dicionário pronto
+    key_dict = st.secrets["firestore_key"]
     
-    # Se o segredo for uma string, ele tenta converter, senão usa como dicionário
-    if isinstance(key_dict, str):
-        key_dict = json.loads(key_dict)
-        
+    # Criamos as credenciais diretamente do dicionário
     creds = service_account.Credentials.from_service_account_info(key_dict)
+    
+    # Retornamos o cliente Firestore
     return firestore.Client(credentials=creds, project=key_dict['expedicao-xpt-t1-spa1'])
 
 db = get_db()

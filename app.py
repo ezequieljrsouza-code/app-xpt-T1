@@ -11,7 +11,7 @@ from datetime import datetime
 import pytz
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Expedição SPA1", page_icon="🚚", layout="wide")
+st.set_page_config(page_title="Expedição T1 SPA1", page_icon="🚚", layout="wide")
 
 # --- NOME NO TOPO (DIREITA) ---
 st.markdown('<div style="text-align: right; color: grey; font-weight: bold;">Ezequiel Miranda</div>', unsafe_allow_html=True)
@@ -74,8 +74,8 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- 5. TÍTULO E NOME DO ANALISTA ---
-st.title("📦 Controle de Carregamento XPT SPA1 - AM/MM")
-st.write(f"Analista: **Ezequiel Miranda**") # Restaurado conforme solicitado
+st.title("📦 Controle de Carregamento T1 XPT SPA1 - AM/MM")
+st.write(f"Analista: **Ezequiel Miranda**")
 
 # --- 6. INICIALIZAÇÃO DE DADOS ---
 if 'dados_controle' not in st.session_state:
@@ -227,7 +227,7 @@ for rota, info in st.session_state.dados_controle.items():
             res_texto += f"🚚 {v['placa']}{doca_txt} - {v['status']} {emoji} {v.get('hora_finalizacao','')}\n"
         res_texto += "\n"
 
-st.text_area("Texto para Copiar", res_texto, height=300)
+st.text_area("Texto para Copiar", res_texto, height=600)
 js_code = f"""
     <script>
     function copiarTexto() {{

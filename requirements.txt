@@ -1,0 +1,6 @@
+streamlit>=1.31.0
+easyocr
+numpy
+opencv-python-headless
+Pillow
+google-cloud-firestore

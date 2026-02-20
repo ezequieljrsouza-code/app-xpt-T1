@@ -1,6 +1,6 @@
-streamlit>=1.31.0
+streamlit
+gspread
+google-auth
 easyocr
-numpy
 opencv-python-headless
-Pillow
-google-cloud-firestore
+pytz

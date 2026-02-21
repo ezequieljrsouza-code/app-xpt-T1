@@ -12,7 +12,7 @@ import pytz
 import time
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Expedição SPA1", page_icon="🚚", layout="wide")
+st.set_page_config(page_title="Expedição SPA1", page_icon="🚛", layout="wide")
 
 # --- NOME NO TOPO (DIREITA) ---
 st.markdown('<div style="text-align: right; color: grey; font-weight: bold;">Ezequiel Miranda</div>', unsafe_allow_html=True)

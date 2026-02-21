@@ -9,11 +9,11 @@ from google.oauth2.service_account import Credentials
 import json
 from datetime import datetime
 import pytz
+import time # Adicionado para controlar o tempo das notificações
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Expedição SPA1", page_icon="🚚", layout="wide")
 
-# --- NOME NO TOPO ---
 st.markdown('<div style="text-align: right; color: grey; font-weight: bold;">Ezequiel Miranda</div>', unsafe_allow_html=True)
 
 # --- 1. CONEXÃO GOOGLE SHEETS ---
@@ -26,6 +26,17 @@ def get_sheets_client():
     creds = Credentials.from_service_account_info(key_dict, scopes=scope)
     return gspread.authorize(creds)
 
+# REMOVIDO O CACHE DAQUI PARA GARANTIR SINCRONISMO ENTRE DISPOSITIVOS
+def carregar_do_sheets():
+    try:
+        client = get_sheets_client()
+        sh = client.open("Expedicao_SPA1")
+        worksheet = sh.get_worksheet(0)
+        conteudo = worksheet.acell('A1').value
+        return json.loads(conteudo) if conteudo else None
+    except Exception as e:
+        return None
+
 def salvar_no_sheets():
     try:
         client = get_sheets_client()
@@ -36,59 +47,55 @@ def salvar_no_sheets():
     except Exception as e:
         st.error(f"Erro ao salvar na nuvem: {e}")
 
-def carregar_do_sheets():
-    try:
-        client = get_sheets_client()
-        sh = client.open("Expedicao_SPA1")
-        worksheet = sh.get_worksheet(0)
-        conteudo = worksheet.acell('A1').value
-        return json.loads(conteudo) if conteudo else None
-    except:
-        return None
-
-# --- 2. FUNÇÃO DE ORGANIZAÇÃO (O QUE ESTAVA FALTANDO) ---
 def organizar_dados(dados_brutos):
     ordem_fixa = ["EPA1", "EPA9", "EMN1", "EPA2", "EPA6"]
     dados_ordenados = {}
-    # Primeiro adiciona as rotas na ordem desejada
     for rota in ordem_fixa:
         if rota in dados_brutos:
             dados_ordenados[rota] = dados_brutos[rota]
-    # Depois adiciona qualquer outra rota que tenha sido criada manualmente
     for rota in dados_brutos:
         if rota not in dados_ordenados:
             dados_ordenados[rota] = dados_brutos[rota]
     return dados_ordenados
 
-# --- 3. DATA E FUSO ---
-fuso_br = pytz.timezone('America/Sao_Paulo')
-data_hoje = datetime.now(fuso_br).strftime('%d/%m/%Y')
+# --- 2. INICIALIZAÇÃO E SINCRONISMO AUTOMÁTICO ---
+if 'dados_controle' not in st.session_state:
+    dados_nuvem = carregar_do_sheets()
+    if dados_nuvem:
+        st.session_state.dados_controle = organizar_dados(dados_nuvem)
+    else:
+        st.session_state.dados_controle = {
+            "EPA1": {"local": "CAPANEMA", "janela": "04:30 às 06:30", "letra": "?", "veiculos": []},
+            "EPA9": {"local": "SANTA LUZIA", "janela": "04:30 às 06:30", "letra": "?", "veiculos": []},
+            "EMN1": {"local": "IMPERATRIZ", "janela": "06:00 às 08:00", "letra": "?", "veiculos": []},
+            "EPA2": {"local": "ABAETETUBA", "janela": "06:00 às 08:00", "letra": "?", "veiculos": []},
+            "EPA6": {"local": "BARCARENA", "janela": "06:00 às 08:00", "letra": "?", "veiculos": []},
+        }
 
-# --- 4. CALLBACKS ---
-def atualizar_ilha(rota):
-    st.session_state.dados_controle[rota]['letra'] = st.session_state[f"l_{rota}"]
-    salvar_no_sheets()
+# --- 3. BOTÕES COM CORREÇÃO DE NOTIFICAÇÃO ---
+col_sync, col_clear, col_add = st.columns([1, 1, 1])
 
-def atualizar_hora(rota):
-    st.session_state.dados_controle[rota]['janela'] = st.session_state[f"h_{rota}"]
-    salvar_no_sheets()
+with col_sync:
+    if st.button("🔄 Sincronizar", use_container_width=True, type="primary"):
+        dados_novos = carregar_do_sheets()
+        if dados_novos:
+            st.session_state.dados_controle = organizar_dados(dados_novos)
+            st.toast("Dados sincronizados com a nuvem! ☁️✅", icon="🔄")
+            time.sleep(0.5) # Pequena pausa para a notificação aparecer antes do reload
+            st.rerun()
 
-# --- 5. CSS ---
-st.markdown("""
-    <style>
-    #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
-    .stDeployButton {display:none;}
-    div[data-testid="stHorizontalBlock"] > div:nth-child(2) button[kind="secondary"] {
-        background-color: #ff4b4b !important; color: white !important; border: none !important;
-    }
-    div.stButton > button:first-child[kind="primary"] {
-        background-color: #007bff !important; border: none;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+with col_clear:
+    if st.button("🗑️ Limpar Tudo", use_container_width=True, type="secondary"):
+        for r in st.session_state.dados_controle:
+            st.session_state.dados_controle[r]["veiculos"] = []
+            st.session_state.dados_controle[r]["letra"] = "?"
+        salvar_no_sheets()
+        st.toast("O painel foi limpo com sucesso! 🗑️", icon="✅")
+        time.sleep(0.5)
+        st.rerun()
 
-# --- 6. TÍTULO E ANALISTA ---
-st.title("📦 Controle de Carregamento XPT SPA1 - AM/MM")
+# --- 4. TÍTULO E ANALISTA ---
+st.title("📦 Controle de Carregamento XPT SPA1")
 st.write(f"Analista: **Ezequiel Miranda**")
 
 # --- 7. INICIALIZAÇÃO ---

@@ -11,9 +11,9 @@ from datetime import datetime
 import pytz
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Expedição T1 SPA1", page_icon="🚚", layout="wide")
+st.set_page_config(page_title="Expedição SPA1", page_icon="🚚", layout="wide")
 
-# --- NOME NO TOPO (DIREITA) ---
+# --- NOME NO TOPO ---
 st.markdown('<div style="text-align: right; color: grey; font-weight: bold;">Ezequiel Miranda</div>', unsafe_allow_html=True)
 
 # --- 1. CONEXÃO GOOGLE SHEETS ---
@@ -46,11 +46,25 @@ def carregar_do_sheets():
     except:
         return None
 
-# --- 2. DATA E FUSO ---
+# --- 2. FUNÇÃO DE ORGANIZAÇÃO (O QUE ESTAVA FALTANDO) ---
+def organizar_dados(dados_brutos):
+    ordem_fixa = ["EPA1", "EPA9", "EMN1", "EPA2", "EPA6"]
+    dados_ordenados = {}
+    # Primeiro adiciona as rotas na ordem desejada
+    for rota in ordem_fixa:
+        if rota in dados_brutos:
+            dados_ordenados[rota] = dados_brutos[rota]
+    # Depois adiciona qualquer outra rota que tenha sido criada manualmente
+    for rota in dados_brutos:
+        if rota not in dados_ordenados:
+            dados_ordenados[rota] = dados_brutos[rota]
+    return dados_ordenados
+
+# --- 3. DATA E FUSO ---
 fuso_br = pytz.timezone('America/Sao_Paulo')
 data_hoje = datetime.now(fuso_br).strftime('%d/%m/%Y')
 
-# --- 3. CALLBACKS ---
+# --- 4. CALLBACKS ---
 def atualizar_ilha(rota):
     st.session_state.dados_controle[rota]['letra'] = st.session_state[f"l_{rota}"]
     salvar_no_sheets()
@@ -59,7 +73,7 @@ def atualizar_hora(rota):
     st.session_state.dados_controle[rota]['janela'] = st.session_state[f"h_{rota}"]
     salvar_no_sheets()
 
-# --- 4. CSS ---
+# --- 5. CSS ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
@@ -73,15 +87,15 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 5. TÍTULO E NOME DO ANALISTA ---
-st.title("📦 Controle de Carregamento T1 XPT SPA1 - AM/MM")
+# --- 6. TÍTULO E ANALISTA ---
+st.title("📦 Controle de Carregamento XPT SPA1 - AM/MM")
 st.write(f"Analista: **Ezequiel Miranda**")
 
-# --- 6. INICIALIZAÇÃO DE DADOS ---
+# --- 7. INICIALIZAÇÃO ---
 if 'dados_controle' not in st.session_state:
     dados_nuvem = carregar_do_sheets()
     if dados_nuvem:
-        st.session_state.dados_controle = dados_nuvem
+        st.session_state.dados_controle = organizar_dados(dados_nuvem)
     else:
         st.session_state.dados_controle = {
             "EPA1": {"local": "CAPANEMA", "janela": "04:30 às 06:30", "letra": "?", "veiculos": []},
@@ -91,49 +105,45 @@ if 'dados_controle' not in st.session_state:
             "EPA6": {"local": "BARCARENA", "janela": "06:00 às 08:00", "letra": "?", "veiculos": []},
         }
 
-# --- 8. BOTÕES DE AÇÃO COM NOTIFICAÇÕES AJUSTADAS ---
+# --- 8. BOTÕES COM NOTIFICAÇÕES ---
 col_sync, col_clear, col_add = st.columns([1, 1, 1])
-
 with col_sync:
     if st.button("🔄 Sincronizar", use_container_width=True, type="primary"):
         st.cache_data.clear()
-        dados_novos = carregar_do_sheets()
-        if dados_novos:
-            st.session_state.dados_controle = organizar_dados(dados_novos)
-            st.toast("Dados sincronizados com a nuvem! ☁️✅", icon="🔄") # Notificação de Sincronismo
+        dados = carregar_do_sheets()
+        if dados: 
+            st.session_state.dados_controle = organizar_dados(dados)
+            st.toast("Dados sincronizados com a nuvem! ☁️✅", icon="🔄")
             st.rerun()
-        else:
-            st.toast("Nenhum dado encontrado na planilha.", icon="⚠️")
 
 with col_clear:
     if st.button("🗑️ Limpar Tudo", use_container_width=True, type="secondary"):
-        # Limpa os veículos e reseta as ilhas
-        for rota in st.session_state.dados_controle:
-            st.session_state.dados_controle[rota]["veiculos"] = []
-            st.session_state.dados_controle[rota]["letra"] = "?"
+        for r in st.session_state.dados_controle:
+            st.session_state.dados_controle[r]["veiculos"] = []
+            st.session_state.dados_controle[r]["letra"] = "?"
         salvar_no_sheets()
-        st.toast("O painel foi limpo com sucesso! 🗑️", icon="✅") # Notificação de Limpeza
+        st.toast("O painel foi limpo com sucesso! 🗑️", icon="✅")
         st.rerun()
 
 with col_add:
     with st.popover("➕ Nova Rota", use_container_width=True):
-        nova_id = st.text_input("ID da Rota").upper()
-        nova_cid = st.text_input("Cidade").upper()
+        n_id = st.text_input("ID Rota").upper()
+        n_cid = st.text_input("Cidade").upper()
         if st.button("Confirmar Adição"):
-            if nova_id and nova_cid:
-                st.session_state.dados_controle[nova_id] = {"local": nova_cid, "janela": "00:00 às 00:00", "letra": "?", "veiculos": []}
+            if n_id and n_cid:
+                st.session_state.dados_controle[n_id] = {"local": n_cid, "janela": "00:00 às 00:00", "letra": "?", "veiculos": []}
                 salvar_no_sheets()
-                st.toast(f"Rota {nova_id} adicionada com sucesso!", icon="📍")
+                st.toast(f"Rota {n_id} adicionada!", icon="📍")
                 st.rerun()
 
-# --- 8. CABEÇALHO DE EDIÇÃO ---
+# --- 9. CABEÇALHO ---
 col_h1, col_h2 = st.columns(2)
 with col_h1:
     titulo_geral = st.text_input("Título", "CARREGAMENTO AM/MM")
 with col_h2:
     data_carregamento = st.text_input("Data", data_hoje)
 
-# --- 9. EXTRAÇÃO OCR (ADAPTADA PARA O PRINT OVERVIEW) ---
+# --- 10. EXTRAÇÃO OCR ---
 @st.cache_resource
 def load_ocr(): return easyocr.Reader(['pt'])
 reader = load_ocr()
@@ -167,16 +177,14 @@ if uploaded_file:
                             if not any(v['placa'] == placa for v in info['veiculos']):
                                 status_img = "FINALIZADO" if "FINALIZADO" in row_text else "PENDENTE"
                                 info['veiculos'].append({
-                                    "placa": placa, 
-                                    "status": status_img, 
-                                    "doca": "",
+                                    "placa": placa, "status": status_img, "doca": "",
                                     "hora_finalizacao": datetime.now(fuso_br).strftime('%H:%M') if status_img == "FINALIZADO" else ""
                                 })
             salvar_no_sheets()
             st.toast("Extração concluída! ✅")
             st.rerun()
 
-# --- 10. EDIÇÃO DAS ROTAS (LAYOUT ORIGINAL) ---
+# --- 11. EDIÇÃO (LAYOUT ORIGINAL) ---
 for rota, info in st.session_state.dados_controle.items():
     with st.expander(f"📍 {rota} | Ilha: {info['letra']} | {info['local']}", expanded=True):
         c_l, c_h, c_a = st.columns([1, 2, 1])
@@ -219,7 +227,7 @@ for rota, info in st.session_state.dados_controle.items():
                     st.rerun()
             st.divider()
 
-# --- 11. WHATSAPP ---
+# --- 12. WHATSAPP ---
 res_texto = f"*{titulo_geral} {data_carregamento}*\n\n"
 for rota, info in st.session_state.dados_controle.items():
     v_validos = [v for v in info['veiculos'] if v['placa'].strip()]
@@ -227,20 +235,12 @@ for rota, info in st.session_state.dados_controle.items():
         res_texto += f"*{rota}* ({info['local']}) ({info['janela']})\nLetra: *{info['letra']}*\n"
         for v in v_validos:
             emoji = "✅" if v['status'] == "FINALIZADO" else "⏳"
-            doca_txt = f" [Doca: {v['doca']}]" if v.get('doca') else ""
-            res_texto += f"🚚 {v['placa']}{doca_txt} - {v['status']} {emoji} {v.get('hora_finalizacao','')}\n"
+            res_texto += f"🚚 {v['placa']} - {v['status']} {emoji} {v.get('hora_finalizacao','')}\n"
         res_texto += "\n"
 
-st.text_area("Texto para Copiar", res_texto, height=600)
+st.text_area("Texto para Copiar", res_texto, height=300)
 js_code = f"""
-    <script>
-    function copiarTexto() {{
-        const textToCopy = `{res_texto}`;
-        navigator.clipboard.writeText(textToCopy).then(() => {{
-            alert("Texto copiado! ✅");
-        }});
-    }}
-    </script>
-    <button style="width:100%; background:#25D366; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="copiarTexto()">COPIAR PARA WHATSAPP</button>
+    <button style="width:100%; background:#25D366; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;" 
+    onclick="navigator.clipboard.writeText(`{res_texto}`).then(()=>alert('Copiado! ✅'))">COPIAR PARA WHATSAPP</button>
 """
 components.html(js_code, height=70)

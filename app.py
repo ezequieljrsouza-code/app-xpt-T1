@@ -91,35 +91,39 @@ if 'dados_controle' not in st.session_state:
             "EPA6": {"local": "BARCARENA", "janela": "06:00 às 08:00", "letra": "?", "veiculos": []},
         }
 
-# --- 7. BOTÕES DE AÇÃO COM NOTIFICAÇÕES ---
+# --- 8. BOTÕES DE AÇÃO COM NOTIFICAÇÕES AJUSTADAS ---
 col_sync, col_clear, col_add = st.columns([1, 1, 1])
+
 with col_sync:
     if st.button("🔄 Sincronizar", use_container_width=True, type="primary"):
         st.cache_data.clear()
-        dados = carregar_do_sheets()
-        if dados: 
-            st.session_state.dados_controle = dados
-            st.toast("Dados atualizados com sucesso! ☁️✅", icon="🔄") # Notificação restaurada
+        dados_novos = carregar_do_sheets()
+        if dados_novos:
+            st.session_state.dados_controle = organizar_dados(dados_novos)
+            st.toast("Dados sincronizados com a nuvem! ☁️✅", icon="🔄") # Notificação de Sincronismo
             st.rerun()
+        else:
+            st.toast("Nenhum dado encontrado na planilha.", icon="⚠️")
 
 with col_clear:
     if st.button("🗑️ Limpar Tudo", use_container_width=True, type="secondary"):
-        for r in st.session_state.dados_controle:
-            st.session_state.dados_controle[r]["veiculos"] = []
-            st.session_state.dados_controle[r]["letra"] = "?"
+        # Limpa os veículos e reseta as ilhas
+        for rota in st.session_state.dados_controle:
+            st.session_state.dados_controle[rota]["veiculos"] = []
+            st.session_state.dados_controle[rota]["letra"] = "?"
         salvar_no_sheets()
-        st.toast("Painel limpo com sucesso! 🗑️", icon="✅") # Notificação restaurada
+        st.toast("O painel foi limpo com sucesso! 🗑️", icon="✅") # Notificação de Limpeza
         st.rerun()
 
 with col_add:
     with st.popover("➕ Nova Rota", use_container_width=True):
-        n_id = st.text_input("ID Rota (ex: EPA9)").upper()
-        n_cid = st.text_input("Cidade").upper()
+        nova_id = st.text_input("ID da Rota").upper()
+        nova_cid = st.text_input("Cidade").upper()
         if st.button("Confirmar Adição"):
-            if n_id and n_cid:
-                st.session_state.dados_controle[n_id] = {"local": n_cid, "janela": "00:00 às 00:00", "letra": "?", "veiculos": []}
+            if nova_id and nova_cid:
+                st.session_state.dados_controle[nova_id] = {"local": nova_cid, "janela": "00:00 às 00:00", "letra": "?", "veiculos": []}
                 salvar_no_sheets()
-                st.toast(f"Rota {n_id} adicionada!", icon="📍")
+                st.toast(f"Rota {nova_id} adicionada com sucesso!", icon="📍")
                 st.rerun()
 
 # --- 8. CABEÇALHO DE EDIÇÃO ---

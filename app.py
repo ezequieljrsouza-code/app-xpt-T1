@@ -177,10 +177,10 @@ if uploaded_file:
                         if match:
                             placa = match.group(0)
                             if not any(v['placa'] == placa for v in info['veiculos']):
-                                status_img = "FINALIZADO" if "FINALIZADO" in row_text else "PENDENTE"
+                                status_img = "Finalizado" if "Finalizado" in row_text else "Pendente"
                                 info['veiculos'].append({
                                     "placa": placa, "status": status_img, "doca": "",
-                                    "hora_finalizacao": datetime.now(fuso_br).strftime('%H:%M') if status_img == "FINALIZADO" else ""
+                                    "hora_finalizacao": datetime.now(fuso_br).strftime('%H:%M') if status_img == "Finalizado" else ""
                                 })
             salvar_no_sheets()
             st.toast("Extração concluída com sucesso! ✅")
@@ -195,7 +195,7 @@ for rota, info in st.session_state.dados_controle.items():
         c_h.text_input("Hora", value=info['janela'], key=f"h_{rota}", on_change=atualizar_hora, args=(rota,))
         
         if c_a.button("➕ Placa", key=f"add_{rota}"):
-            info['veiculos'].append({"placa": "", "status": "PENDENTE", "doca": ""})
+            info['veiculos'].append({"placa": "", "status": "Pendente", "doca": ""})
             salvar_no_sheets()
             st.rerun()
 
@@ -212,12 +212,12 @@ for rota, info in st.session_state.dados_controle.items():
                 salvar_no_sheets()
 
             # Selectbox de Status
-            status_opcoes = ["PENDENTE", "FINALIZADO", "EM CARREGAMENTO", "CANCELADO", "AGUARDANDO"]
+            status_opcoes = ["Pendente", "Finalizado", "Em Carregamento", "Cancelado", "Aguardando Carregamento"]
             novo_s = c2.selectbox("Status", status_opcoes, index=status_opcoes.index(v['status']) if v['status'] in status_opcoes else 0, key=f"s_{rota}_{idx}")
             
             if novo_s != v['status']:
                 v['status'] = novo_s
-                if novo_s == "FINALIZADO":
+                if novo_s == "Finalizado":
                     v['hora_finalizacao'] = datetime.now(fuso_br).strftime('%H:%M')
                 salvar_no_sheets()
             
@@ -248,14 +248,14 @@ for rota, info in st.session_state.dados_controle.items():
     if v_validos:
         res_texto += f"*{rota}* ({info['local']}) ({info['janela']})\nLetra: *{info['letra']}*\n"
         for v in v_validos:
-            status_emoji = "✅" if v['status'] == "FINALIZADO" else "⏳"
-            hora_f = f" {v.get('hora_finalizacao', '')}" if v['status'] == "FINALIZADO" else ""
+            status_emoji = "✅" if v['status'] == "Finalizado" else "⏳"
+            hora_f = f" {v.get('hora_finalizacao', '')}" if v['status'] == "Finalizado" else ""
             doca_txt = f" [Doca: {v['doca']}]" if v.get('doca') else ""
             res_texto += f"🚚 {v['placa']}{doca_txt} - {v['status']} {status_emoji}{hora_f}\n"
         res_texto += "\n"
 
 st.subheader("📲 Compartilhar no WhatsApp")
-st.text_area("Pré-visualização do Texto", res_texto, height=250)
+st.text_area("Pré-visualização do Texto", res_texto, height=450)
 
 # Botão de Cópia via JavaScript
 js_copiar = f"""

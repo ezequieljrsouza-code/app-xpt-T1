@@ -255,7 +255,7 @@ for rota, info in st.session_state.dados_controle.items():
         res_texto += "\n"
 
 st.subheader("📲 Compartilhar no WhatsApp")
-st.text_area("Pré-visualização do Texto", res_texto, height=450)
+st.text_area("Pré-visualização do Texto", res_texto, height=650)
 
 # Botão de Cópia via JavaScript
 js_copiar = f"""
